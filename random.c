@@ -140,8 +140,6 @@ int getccol(int bflg)
 			col |= tabmask;
 		else if (c < 0x20 || c == 0x7F)
 			++col;
-		else if (c >= 0xc0 && c <= 0xa0)
-			col += 2;
 		++col;
 	}
 	return col;

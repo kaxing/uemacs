@@ -324,6 +324,61 @@ int get1key(void)
 	return c;
 }
 
+/*
+ * Show hints for Ctrl-X commands
+ */
+static void show_ctlx_hints(void)
+{
+	struct key_tab *ktp;
+	char keyseq[80];
+	char *fname;
+	int c;
+	int len;
+	int maxlen;
+
+	movecursor(term.t_nrow, 0);
+#if COLOR
+	TTforg(7);
+	TTbacg(0);
+#endif
+	ostring("^X: ");
+	
+	/* Calculate remaining space on the line */
+	maxlen = term.t_ncol - 5; /* 4 for "^X: " + 1 safety */
+	if (maxlen < 10) return; /* Not enough space */
+	
+	len = 0;
+	ktp = &keytab[0];
+	while (ktp->k_fp != NULL) {
+		if (ktp->k_code & CTLX) {
+			c = ktp->k_code & ~CTLX;
+			cmdstr(c, keyseq);
+			fname = getfname(ktp->k_fp);
+			if (fname == NULL) fname = "???";
+			
+			/* Check if it fits */
+			if (len + strlen(keyseq) + strlen(fname) + 4 > maxlen) {
+				ostring("...");
+				break;
+			}
+			
+			ostring("[");
+			ostring(keyseq);
+			ostring("]");
+			ostring(fname);
+			ostring(" ");
+			
+			len += strlen(keyseq) + strlen(fname) + 4;
+		}
+		ktp++;
+	}
+
+	if (eolexist == TRUE)
+		TTeeol();
+	TTflush();
+	mpresf = TRUE;
+}
+
 /*	GETCMD:	Get a command from the keyboard. Process all applicable
 		prefix keys
 							*/
@@ -344,6 +399,18 @@ int getcmd(void)
 		goto handle_CSI;
 	/* process META prefix */
 	if (c == (CONTROL | '[')) {
+		if (discmd) {
+			movecursor(term.t_nrow, 0);
+#if COLOR
+			TTforg(7);
+			TTbacg(0);
+#endif
+			ostring("Meta:       x cmd | s search | r replace | z save-quit | ? help");
+			if (eolexist == TRUE)
+				TTeeol();
+			TTflush();
+			mpresf = TRUE;
+		}
 		c = get1key();
 #if VT220
 		if (c == '[' || c == 'O') {	/* CSI P.K. */
@@ -395,6 +462,18 @@ handle_CSI:
 	}
 #if	PKCODE
 	else if (c == metac) {
+		if (discmd) {
+			movecursor(term.t_nrow, 0);
+#if COLOR
+			TTforg(7);
+			TTbacg(0);
+#endif
+			ostring("Meta:       x cmd | s search | r replace | z save-quit | ? help");
+			if (eolexist == TRUE)
+				TTeeol();
+			TTflush();
+			mpresf = TRUE;
+		}
 		c = get1key();
 #if VT220
 		if (c == (CONTROL | '[')) {
@@ -416,6 +495,9 @@ handle_CSI:
 #endif
 	/* process CTLX prefix */
 	if (c == ctlxc) {
+		if (discmd) {
+			show_ctlx_hints();
+		}
 		c = get1key();
 #if VT220
 		if (c == (CONTROL | '[')) {

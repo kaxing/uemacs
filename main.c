@@ -299,6 +299,12 @@ int main(int argc, char **argv)
 			update(FALSE);
 	}
 
+	/* Show a startup hint for new users */
+	if (!gotoflag && !searchflag) {
+		update(FALSE);
+		mlwrite("C-x C-c quit | C-x C-s save | C-x C-f open | C-s search | ESC ? help");
+	}
+
 	/* Setup to process commands. */
 	lastflag = 0;  /* Fake last flags. */
 
